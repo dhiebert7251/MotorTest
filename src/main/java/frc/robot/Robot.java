@@ -4,7 +4,17 @@
 
 package frc.robot;
 
+import com.ctre.phoenix.motorcontrol.can.VictorSPX;
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.wpilibj.AnalogEncoder;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -20,6 +30,20 @@ public class Robot extends TimedRobot {
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
+  private CANSparkMax driveMotor;
+  private VictorSPX turnMotor;
+
+  private RelativeEncoder driveEncoder;
+  private AnalogEncoder turnEncoder;
+
+  private int kDriveMotorID = 20;
+  private int kTurnMotorID = 30;
+  private int kTurnEncoderID = 0;
+
+  //private ShuffleboardTab motorTab =  Shuffleboard.getTab("Motor Data");
+
+
+
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -29,6 +53,33 @@ public class Robot extends TimedRobot {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
+
+    driveMotor = new CANSparkMax(kDriveMotorID, MotorType.kBrushless);
+    turnMotor = new VictorSPX(kTurnMotorID);
+
+    driveEncoder = driveMotor.getEncoder();
+    turnEncoder = new AnalogEncoder(kTurnEncoderID);
+
+    driveEncoder.setPosition(0.0); //initialize position to 0
+    driveEncoder.setPositionConversionFactor(33.488); //360 degrees divided by 10.75 gear ratio - output in degrees
+    driveEncoder.setVelocityConversionFactor((5676/10.75)*Units.inchesToMeters(12.56)/60); //(5676 free speed / 10.75 gear ratio) * 12.56" circumference (to meters) /60 seconds
+    
+    turnEncoder.setDistancePerRotation(360); //rotation in degrees
+    turnEncoder.reset();
+    
+    SmartDashboard.putNumber("Drive ID", kDriveMotorID);
+    SmartDashboard.putNumber("Initial Drive Position", driveEncoder.getPosition()); //should be 0
+    SmartDashboard.putNumber("Position Conversion Factor", driveEncoder.getPositionConversionFactor());
+    SmartDashboard.putNumber("Velocity Conversion Factor m/s", driveEncoder.getVelocityConversionFactor());
+    SmartDashboard.putNumber("Initial Drive Velocity", driveEncoder.getVelocity());
+
+    SmartDashboard.putNumber("Turn Motor ID", kTurnMotorID);
+    SmartDashboard.putNumber("Turn Encoder ID", kTurnEncoderID);
+    SmartDashboard.putNumber("Distance Per Rotation", turnEncoder.getDistancePerRotation());
+    SmartDashboard.putNumber("Initial Turn Encoder Value", turnEncoder.get());
+    SmartDashboard.putNumber("Initial Turn Absolute Position",turnEncoder.getAbsolutePosition());
+    SmartDashboard.putNumber("Initial Turn Distance", turnEncoder.getDistance());
+  
   }
 
   /**
@@ -39,7 +90,17 @@ public class Robot extends TimedRobot {
    * SmartDashboard integrated updating.
    */
   @Override
-  public void robotPeriodic() {}
+  public void robotPeriodic() {
+
+    SmartDashboard.putNumber("Drive Velocity", driveEncoder.getVelocity());
+    SmartDashboard.putNumber("Drive Position", driveEncoder.getPosition());
+
+    SmartDashboard.putNumber("Current Turn Encoder Value", turnEncoder.get());
+    SmartDashboard.putNumber("Current Turn Absolute Position",turnEncoder.getAbsolutePosition());
+    SmartDashboard.putNumber("Current Turn Distance", turnEncoder.getDistance());
+
+
+  }
 
   /**
    * This autonomous (along with the chooser code above) shows how to select between different
